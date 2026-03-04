@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Shramik Seva | Labour Search</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<style>
+            * {
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: Poppins;
+            margin: 0;
+            background: #f4f6f8;
+        }
+
+        header {
+            background: linear-gradient(135deg, #ff9800, #ff5722);
+            color: #fff;
+            padding: 25px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0
+        }
+
+        header p {
+            margin: 5px 0
+        }
+
+        .search {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            padding: 20px;
+            flex-wrap: wrap;
+            background: #fff;
+        }
+
+        .search input,
+        .search select {
+            padding: 10px;
+            width: 150px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+            padding: 25px;
+        }
+
+        .card {
+            background: #fff;
+            padding: 18px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: .3s;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+        }
+
+        .card img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            float: right;
+        }
+
+        .badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #4caf50;
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .card h3 {
+            margin: 0;
+            color: #333
+        }
+
+        .card p {
+            margin: 6px 0;
+            color: #555
+        }
+
+        .card button {
+            margin-top: 10px;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            background: #2196f3;
+            color: #fff;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .card button:hover {
+            background: #1976d2;
+        }
+
+        .admin {
+            background: #fff;
+            margin: 25px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .admin h2 {
+            margin-top: 0
+        }
+
+        .admin input {
+            padding: 10px;
+            margin: 6px;
+            width: 200px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .admin button {
+            padding: 10px 22px;
+            background: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        footer {
+            background: #ddd;
+            text-align: center;
+            padding: 15px;
+            font-size: 14px;
+        }
+
+        .langToggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 12px;
+            background: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        #map {
+            height: 300px;
+            margin: 25px;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 20px;
+            cursor: pointer;
+            color: #333;
+        }
+</style>
+
+<body>
+
+    <header>
+        <h1>🧑‍🏭 Shramik Seva</h1>
+        <p>काम ढूंढो • मजदूर पाओ • भरोसे के साथ</p>
+    </header>
+
+    <button class="langToggle" onclick="toggleLang()">🇮🇳 / EN</button>
+
+    <!-- LOGIN PANEL -->
+    <section class="admin" id="loginPanel">
+        <h2>🔑 Login (Demo OTP)</h2>
+        <p>मोबाइल नंबर से लॉगिन करें</p>
+        <input id="loginPhone" placeholder="मोबाइल नंबर">
+        <button onclick="sendOTP()">Send OTP</button>
+        <br><br>
+        <input id="otpInput" placeholder="Enter OTP">
+        <button onclick="verifyOTP()">Verify OTP</button>
+        <p id="otpMsg" style="color:green;"></p>
+    </section>
+
+    <!-- SEARCH -->
+    <section class="search">
+        <input type="text" id="skillSearch" placeholder="Skill खोजें">
+        <input type="text" id="searchPin" placeholder="Address / PIN">
+        <input type="number" id="radiusInput" placeholder="Radius (km)" value="10" min="1">
+        <button onclick="searchByAddress()">Search</button>
+    </section>
+
+    <!-- MAP -->
+    <div id="map"></div>
+
+    <!-- LABOURS GRID -->
+    <section id="labourList" class="grid"></section>
+
+    <!-- LABOUR REGISTRATION -->
+    <section class="admin">
+        <h2>🛠️ Labour Registration</h2>
+        <input id="name" placeholder="नाम">
+        <input id="skill" placeholder="काम (Skill)">
+        <input id="phone" placeholder="मोबाइल नंबर">
+        <input id="pin" placeholder="PIN Code">
+        <input id="village" placeholder="Village" readonly>
+        <input id="district" placeholder="District" readonly>
+        <input id="state" placeholder="State" readonly>
+        <input type="file" id="profileImg" accept="image/*">
+        <br><br>
+        <button onclick="addLabour()">➕ Register Labour</button>
+    </section>
+
+    <footer>© 2026 Shramik Seva | Digital India 🇮🇳 | Contact: 6388519421 | Email: <a style="text-decoration: none;" href="mailto:ank1372003@gmail.com">ank1372003@gmail.com</a></footer>
+
+    <!-- MODAL -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">×</span>
+            <h3 id="modalName"></h3>
+            <img id="modalImg" style="width:80px;height:80px;border-radius:50%;">
+            <p><strong>Skill:</strong> <span id="modalSkill"></span></p>
+            <p><strong>Address:</strong> <span id="modalAddress"></span></p>
+            <p><strong>Phone:</strong> <span id="modalPhone"></span></p>
+            <p><strong>Rating:</strong> <span id="modalRating"></span></p>
+            <p><strong>Availability:</strong> <span id="modalAvail"></span></p>
+            <p id="modalDistance"></p>
+        </div>
+    </div>
+    
+    
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        
+// ----- LANGUAGE -----
+let lang = "hi";
+const dictionary = { hi: { skill: "Skill खोजें", hire: "Hire Now" }, en: { skill: "Search Skill", hire: "Hire Now" } };
+function toggleLang() { lang = (lang === "hi") ? "en" : "hi"; skillSearch.placeholder = dictionary[lang].skill; document.querySelectorAll(".card button").forEach(b => b.innerText = dictionary[lang].hire); }
+
+// ----- LOGIN -----
+let currentUser = JSON.parse(sessionStorage.getItem("currentUser")) || null;
+let otpCode = null;
+function sendOTP() { let phone = document.getElementById("loginPhone").value; if (!phone) { alert("Enter mobile"); return; } otpCode = Math.floor(1000 + Math.random() * 9000); document.getElementById("otpMsg").innerText = `Demo OTP: ${otpCode}`; alert(`OTP sent (demo): ${otpCode}`); }
+function verifyOTP() { let entered = document.getElementById("otpInput").value; if (entered == otpCode) { currentUser = { phone: document.getElementById("loginPhone").value, role: "user" }; sessionStorage.setItem("currentUser", JSON.stringify(currentUser)); document.getElementById("otpMsg").innerText = "✅ Logged in!"; alert("Login successful!"); filter(); } else { alert("❌ OTP incorrect"); } }
+function isLoggedIn() { return currentUser != null; }
+
+// ----- LABOURS -----
+let labours = JSON.parse(localStorage.getItem("labours")) || [];
+let list = document.getElementById("labourList");
+let skillSearch = document.getElementById("skillSearch");
+let searchPin = document.getElementById("searchPin");
+let userLocation = null;
+
+// ----- MAP -----
+let map = L.map('map').setView([28.6139, 77.2090], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+let markers = [];
+
+// ----- DISTANCE -----
+function getDistance(lat1, lon1, lat2, lon2) { function toRad(x) { return x * Math.PI / 180; } let R = 6371, dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1); let a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2; return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); }
+
+// ----- AUTO-FILL PIN -----
+document.getElementById("pin").addEventListener("input", async function () {
+    let pin = this.value.trim();
+    if (pin.length !== 6) return;
+    try {
+        let res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+        let data = await res.json();
+        if (data[0].Status !== "Success") return;
+        let po = data[0].PostOffice[0];
+        document.getElementById("village").value = po.Name;
+        document.getElementById("district").value = po.District;
+        document.getElementById("state").value = po.State;
+    } catch (e) { console.log("PIN lookup error", e); }
+});
+
+// ----- ADD LABOUR -----
+async function addLabour() {
+    let n = name.value.trim(), s = skill.value.trim(), p = phone.value.trim(), pin = document.getElementById("pin").value.trim(),
+        village = document.getElementById("village").value, district = document.getElementById("district").value, state = document.getElementById("state").value,
+        imgFile = document.getElementById("profileImg").files[0];
+    if (!n || !s || !p || !pin || !village || !district || !state || !imgFile) { alert("⚠️ सभी जानकारी भरें"); return; }
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+        let imgData = e.target.result;
+        let addr = `${village}, ${district}, ${state}, PIN: ${pin}`;
+        let geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}`;
+        let res = await fetch(geoUrl); let data = await res.json();
+        if (!data || data.length == 0) { alert("❌ Address not found"); return; }
+        let lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
+        labours.push({ name: n, skill: s, phone: p, address: addr, profileImg: imgData, lat, lng, rating: (Math.random() * 1 + 4).toFixed(1), available: true });
+        localStorage.setItem("labours", JSON.stringify(labours));
+        filter();
+        name.value = skill.value = phone.value = document.getElementById("pin").value = document.getElementById("village").value = document.getElementById("district").value = document.getElementById("state").value = ""; document.getElementById("profileImg").value = "";
+    };
+    reader.readAsDataURL(imgFile);
+}
+
+// ----- SEARCH BY ADDRESS -----
+async function searchByAddress() {
+    let addr = searchPin.value.trim(); if (!addr) return;
+    let geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}`;
+    let res = await fetch(geoUrl); let data = await res.json();
+    if (!data || data.length == 0) { alert("Address not found"); return; }
+    userLocation = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    map.setView([userLocation.lat, userLocation.lng], 12);
+    filter();
+}
+
+// ----- FILTER & RENDER -----
+function filter() {
+    let skill = skillSearch.value.toLowerCase(), radius = parseFloat(document.getElementById("radiusInput").value) || 10;
+    let filtered = labours.filter(l => l.skill.toLowerCase().includes(skill) && l.available);
+    if (userLocation) {
+        filtered.forEach(l => l.distance = getDistance(userLocation.lat, userLocation.lng, l.lat, l.lng));
+        filtered = filtered.filter(l => l.distance <= radius);
+        filtered.sort((a, b) => a.distance - b.distance);
+    }
+    render(filtered);
+}
+
+function render(data) {
+    list.innerHTML = ""; markers.forEach(m => map.removeLayer(m)); markers = [];
+    if (data.length === 0) { list.innerHTML = "<p>No labour found 😕</p>"; return; }
+    data.forEach(l => {
+        if (!l.available) return;
+        let card = document.createElement("div"); card.className = "card";
+        card.innerHTML = `<div class="badge">⭐ ${l.rating}</div><img src="${l.profileImg}"><h3>${l.name}</h3><p>🛠️ ${l.skill}</p><p>📍 ${l.address}</p><p>📞 ${l.phone}</p>${l.distance ? `<p>📏 ${l.distance.toFixed(1)} km away</p>` : ''}<button onclick="hire('${l.name}')">${dictionary[lang].hire}</button>`;
+        card.onclick = () => openModal(l); list.appendChild(card);
+        if (l.lat && l.lng) { let m = L.marker([l.lat, l.lng]).addTo(map).bindPopup(`${l.name} - ${l.skill}${l.distance ? ' (' + l.distance.toFixed(1) + ' km)' : ''}`); markers.push(m); }
+    });
+}
+
+// ----- HIRE -----
+function hire(name) { if (!isLoggedIn()) { alert("❌ Please login to hire labour"); return; } alert("✅ " + name + " को hire request भेज दी गई (Demo)"); }
+
+// ----- MODAL -----
+let modal = document.getElementById("profileModal");
+function openModal(l) {
+    document.getElementById("modalName").innerText = l.name;
+    document.getElementById("modalImg").src = l.profileImg;
+    document.getElementById("modalSkill").innerText = l.skill;
+    document.getElementById("modalAddress").innerText = l.address;
+    document.getElementById("modalPhone").innerText = l.phone;
+    document.getElementById("modalRating").innerText = l.rating;
+    document.getElementById("modalAvail").innerHTML = l.available ? `<button onclick="toggleAvailability('${l.phone}')">Online ✅</button>` : `<button onclick="toggleAvailability('${l.phone}')">Offline ❌</button>`;
+    document.getElementById("modalDistance").innerText = l.distance ? `Distance: ${l.distance.toFixed(1)} km` : '';
+    modal.style.display = "flex";
+}
+function closeModal() { modal.style.display = "none"; }
+function toggleAvailability(phone) { let l = labours.find(l => l.phone === phone); if (l) { l.available = !l.available; localStorage.setItem("labours", JSON.stringify(labours)); openModal(l); filter(); } }
+
+    </script>
+
+</body>
+
+</html>
